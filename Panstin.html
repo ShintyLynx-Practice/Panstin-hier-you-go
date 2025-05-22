@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz mit Stufen-Achievement</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+    #container {
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #feedback, #achievement {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #achievement {
+      padding: 15px;
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .hidden {
+      display: none;
+    }
+    .achievement-entry {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      background-color: #eee;
+    }
+    .achievement-unlocked {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+
+    <!-- Hauptmenü -->
+    <div id="mainMenu">
+      <h2>Willkommen zum Quiz</h2>
+      <button onclick="startQuiz()">🎯 Quiz starten</button>
+      <button onclick="showAchievements()">🏅 Achievements anzeigen</button>
+    </div>
+
+    <!-- Quiz -->
+    <div id="quizSection" class="hidden">
+      <h2>Frage <span id="questionNumber">1</span></h2>
+      <p id="questionText"></p>
+      <input type="text" id="userAnswer" placeholder="Deine Antwort">
+      <button onclick="checkAnswer()">Antwort überprüfen</button>
+      <button onclick="backToMenu()">🔙 Zurück</button>
+      <div id="feedback"></div>
+      <div id="achievement" class="hidden"></div>
+    </div>
+
+    <!-- Achievement-Anzeige -->
+    <div id="achievementScreen" class="hidden">
+      <h2>🏅 Deine Achievements</h2>
+      <div id="achievementList"></div>
+      <button onclick="backToMenu()">🔙 Zurück</button>
+    </div>
+
+  </div>
+
+  <script>
+    // Fragen
+    const questions = [
+      { question: "Was ist 2 + 2?", answer: "4" },
+      { question: "Wie viele Beine hat eine Spinne?", answer: "8" },
+      { question: "Was ist die Hauptstadt von Frankreich?", answer: "paris" },
+      { question: "Welches Tier macht Miau?", answer: "katze" },
+      { question: "Wie heißt der Planet, auf dem wir leben?", answer: "erde" }
+    ];
+
+    let currentIndex = 0;
+    const requiredCorrect = 3;
+    const progressKey = "correctAnswersCount";
+    const achievementKey = "multiQuestionAchievement";
+
+    function startQuiz() {
+      currentIndex = 0;
+      showSection("quizSection");
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      if (currentIndex >= questions.length) {
+        alert("Alle Fragen durchlaufen.");
+        backToMenu();
+        return;
+      }
+
+      const q = questions[currentIndex];
+      document.getElementById("questionText").textContent = q.question;
+      document.getElementById("questionNumber").textContent = currentIndex + 1;
+      document.getElementById("userAnswer").value = "";
+      document.getElementById("feedback").textContent = "";
+      document.getElementById("achievement").classList.add("hidden");
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById("userAnswer").value.toLowerCase().trim();
+      const feedback = document.getElementById("feedback");
+      const achievementBox = document.getElementById("achievement");
+      const correct = questions[currentIndex].answer.toLowerCase();
+
+      if (input === correct) {
+        feedback.textContent = "✅ Richtig!";
+        feedback.style.color = "green";
+
+        let correctCount = parseInt(localStorage.getItem(progressKey)) || 0;
+
+        // Nur erhöhen, wenn diese Frage neu korrekt war
+        correctCount++;
+        localStorage.setItem(progressKey, correctCount);
+
+        // Achievement vergeben, wenn Ziel erreicht
+        if (correctCount >= requiredCorrect && localStorage.getItem(achievementKey) !== "true") {
+          localStorage.setItem(achievementKey, "true");
+          achievementBox.textContent = "🎉 Achievement freigeschaltet: Quiz-Held!";
+          achievementBox.classList.remove("hidden");
+        }
+
+        currentIndex++;
+        setTimeout(loadQuestion, 1000);
+      } else {
+        feedback.textContent = "❌ Falsch. Versuch es nochmal.";
+        feedback.style.color = "red";
+        achievementBox.classList.add("hidden");
+      }
+    }
+
+    function showAchievements() {
+      showSection("achievementScreen");
+      const list = document.getElementById("achievementList");
+      list.innerHTML = "";
+
+      const isUnlocked = localStorage.getItem(achievementKey) === "true";
+
+      const entry = document.createElement("div");
+      entry.className = "achievement-entry" + (isUnlocked ? " achievement-unlocked" : "");
+      entry.textContent = isUnlocked
+        ? "🧠 Quiz-Held – Freigeschaltet!"
+        : `🔒 Quiz-Held – Beantworte ${requiredCorrect} Fragen richtig`;
+      list.appendChild(entry);
+    }
+
+    function backToMenu() {
+      showSection("mainMenu");
+    }
+
+    function showSection(idToShow) {
+      ["mainMenu", "quizSection", "achievementScreen"].forEach(id => {
+        document.getElementById(id).classList.add("hidden");
+      });
+      document.getElementById(idToShow).classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
